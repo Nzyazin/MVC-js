@@ -1,28 +1,23 @@
 export default class View {
     constructor() {
         this.app = this.getElement('#root')
-
-        this.title = this.createElement('h1')
-        this.title.textContent = 'Todos'
-
-        this.background = document.body.style.backgroundImage
-
         this.form = this.createElement('form')
-
         this.input = this.createElement('input')
         this.input.type = 'text'
         this.input.placeholder = 'Add todo'
         this.input.name = 'todo'
-
         this.submitButton = this.createElement('button')
         this.submitButton.textContent = 'Submit'
-
-        this.todoList = this.createElement('ul', 'todo-list')
-
         this.form.append(this.input, this.submitButton)
-
+        this.title = this.createElement('h1')
+        this.title.textContent = 'Todos'
+        this.background = document.body.style.backgroundImage
+        this.todoList = this.createElement('ul', 'todo-list')
         this.bodyStyle = this.createStyleForBackground('../image/background.jpg')
         this.app.append(this.title, this.form, this.todoList, this.bodyStyle)
+
+        this._temporaryTodoText = ''
+        this._initLocalListeners()
     }
 
     get _todoText() {
@@ -32,6 +27,19 @@ export default class View {
     _resetInput() {
         this.input.value = ''
     }
+
+    createElement(tag, className) {
+        const element = document.createElement(tag)
+        if (className) element.classList.add(className)
+
+        return element
+    }
+
+    getElement(selector) {
+        const element = document.querySelector(selector)
+
+        return element
+    }    
 
     displayTodos(todos) {
         while(this.todoList.firstChild) {
@@ -70,14 +78,48 @@ export default class View {
                 this.todoList.append(li)
             })
         }
+        console.log(todos)
     }
 
-    createElement(tag, className) {
-        const element = document.createElement(tag)
-        if (className) element.classList.add(className)
-
-        return element
+    _initLocalListeners() {
+        this.todoList.addEventListener('input', event => {
+            if (event.target.className === 'editable') {
+                this._temporaryTodoText = event.target.innerText
+            }
+        })
     }
+
+    bindAddTodo(handler) {
+        this.form.addEventListener('submit', event => {
+            event.preventDefault()
+
+            if (this._todoText) {
+                handler(this._todoText)
+                this._resetInput
+            }
+        })
+    }
+
+    bindDeleteTodo(handler) {
+        this.todoList.addEventListener('click', event => {
+            if (event.target.className === 'delete') {
+                const id = parseInt(event.target.parentElement.id)
+
+                handler(id)
+            }
+        })
+    }
+
+    bindEditTodo(handler) {
+        this.todoList.addEventListener('focusout', event => {
+            if (this._temporaryTodoText) {
+                const id = parseInt(event.target.parentElement.id)
+
+                handler(id, this._temporaryTodoText)
+                this._temporaryTodoText = ''
+            }
+        })
+    }   
 
     createStyleForBackground(img) {
         var backgroundImage = new Image()
@@ -86,11 +128,15 @@ export default class View {
             document.body.style.backgroundImage = `url('${img}')`;
             document.body.style.backgroundRepeat = "no-repeat";
         }
-    }
+    }   
 
-    getElement(selector) {
-        const element = document.querySelector(selector)
+    bindToggleTodo(handler) {
+        this.todoList.addEventListener('change', event => {
+            if (event.target.type === 'checkbox') {
+                const id = parseInt(event.target.parentElement.id)
 
-        return element
+                handler(id)
+            }
+        })
     }
 }
