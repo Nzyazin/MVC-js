@@ -1,2 +1,2 @@
-# MVC-js
- frontend with local storage
+# MVC javascript
+ 
