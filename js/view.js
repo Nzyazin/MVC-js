@@ -1,23 +1,48 @@
 export default class View {
     constructor() {
         this.app = this.getElement('#root')
+        
+        this.title = this.createElement('h1')
+        this.title.textContent = 'Todos'
+
         this.form = this.createElement('form')
+
         this.input = this.createElement('input')
+
         this.input.type = 'text'
         this.input.placeholder = 'Add todo'
         this.input.name = 'todo'
+
         this.submitButton = this.createElement('button')
         this.submitButton.textContent = 'Submit'
-        this.form.append(this.input, this.submitButton)
-        this.title = this.createElement('h1')
-        this.title.textContent = 'Todos'
-        this.background = document.body.style.backgroundImage
-        this.todoList = this.createElement('ul', 'todo-list')
-        this.bodyStyle = this.createStyleForBackground('../image/background.jpg')
-        this.app.append(this.title, this.form, this.todoList, this.bodyStyle)
 
-        this._temporaryTodoText = ''
+        this.todoList = this.createElement('ul', 'todo-list')
+
+        this.form.append(this.input, this.submitButton)
+
+        this.app.append(this.title, this.form,  this.todoList)
+
+        this._temporaryTodoText
         this._initLocalListeners()
+    }
+
+    _initLocalListeners() {
+        this.todoList.addEventListener('input', event => {
+            if (event.target.className === 'editable') {
+                this._temporaryTodoText = event.target.innerText
+            }
+        })
+    }
+
+    bindEditTodo(handler) {
+        this.todoList.addEventListener('focusout', event => {
+            if (this._temporaryTodoText) {
+                const id = parseInt(event.target.parentElement.id)
+
+                handler(id, this._temporaryTodoText)
+                this._temporaryTodoText = ''
+            }   
+        })
     }
 
     get _todoText() {
@@ -28,27 +53,14 @@ export default class View {
         this.input.value = ''
     }
 
-    createElement(tag, className) {
-        const element = document.createElement(tag)
-        if (className) element.classList.add(className)
-
-        return element
-    }
-
-    getElement(selector) {
-        const element = document.querySelector(selector)
-
-        return element
-    }    
-
     displayTodos(todos) {
-        while(this.todoList.firstChild) {
+        while (this.todoList.firstChild) {
             this.todoList.removeChild(this.todoList.firstChild)
         }
 
         if (todos.length === 0) {
             const p = this.createElement('p')
-            p.textContent = 'Nothing to do Add a task?'
+            p.textContent = 'Nothing to do. Add a task?'
             this.todoList.append(p)
         } else {
             todos.forEach(todo => {
@@ -78,24 +90,28 @@ export default class View {
                 this.todoList.append(li)
             })
         }
-        console.log(todos)
     }
 
-    _initLocalListeners() {
-        this.todoList.addEventListener('input', event => {
-            if (event.target.className === 'editable') {
-                this._temporaryTodoText = event.target.innerText
-            }
-        })
+    createElement(tag, className) {
+        const elem = document.createElement(tag)
+        if (className) elem.classList.add(className)
+
+        return elem
+    }
+
+    getElement(selector) {
+        const elem = document.querySelector(selector)
+        return elem
     }
 
     bindAddTodo(handler) {
-        this.form.addEventListener('submit', event => {
+        this.form.addEventListener('submit', (event) => {
+            
             event.preventDefault()
 
             if (this._todoText) {
                 handler(this._todoText)
-                this._resetInput
+                this._resetInput()
             }
         })
     }
@@ -109,26 +125,6 @@ export default class View {
             }
         })
     }
-
-    bindEditTodo(handler) {
-        this.todoList.addEventListener('focusout', event => {
-            if (this._temporaryTodoText) {
-                const id = parseInt(event.target.parentElement.id)
-
-                handler(id, this._temporaryTodoText)
-                this._temporaryTodoText = ''
-            }
-        })
-    }   
-
-    createStyleForBackground(img) {
-        var backgroundImage = new Image()
-        backgroundImage.src = img
-        backgroundImage.onload = function() {
-            document.body.style.backgroundImage = `url('${img}')`;
-            document.body.style.backgroundRepeat = "no-repeat";
-        }
-    }   
 
     bindToggleTodo(handler) {
         this.todoList.addEventListener('change', event => {
